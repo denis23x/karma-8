@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Karma8</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="./styles/main.css">
+	</head>
+	<body>
+		<header class="header container">
+			<a href="./news.html" aria-label="Go to the news homepage">
+				<svg class="header-logo" width="137" height="32" viewBox="0 0 137 32" role="img" aria-labelledby="logo-title">
+					<title id="logo-title">Website Logo</title>
+					<use xlink:href="./assets/sprite.svg#logo"></use>
+				</svg>
+			</a>
+			<nav class="header-nav" aria-label="Main navigation">
+				<a class="btn btn-gray btn-md" href="./charts.html">Charts</a>
+				<a class="btn btn-gray btn-md" href="./news.html">News</a>
+			</nav>
+		</header>
+		<main class="main container">
+			<div class="charts">
+				<h1 class="charts-title">Charts</h1>
+				<ul class="charts-amount" aria-label="Chart Data Summary">
+					<li class="charts-amount-item">
+						<span class="charts-amount-item-name">Chart 1</span>
+						<span class="charts-amount-item-red" id="total-red" aria-label="Total red data">0 GB</span>
+					</li>
+					<li class="charts-amount-item">
+						<span class="charts-amount-item-name">Chart 2</span>
+						<span class="charts-amount-item-blue" id="total-blue" aria-label="Total blue data">0 GB</span>
+					</li>
+				</ul>
+				<div class="charts-wrapper">
+					<div class="charts-months-navigation" id="charts-months-navigation" aria-label="Months navigation">
+						<button class="btn btn-dark btn-md prev" aria-label="Previous month">
+							<svg class="header-logo" width="20" height="20" viewBox="0 0 20 20" role="img" aria-labelledby="arrow-prev-title">
+								<title id="arrow-prev-title">Previous month</title>
+								<use xlink:href="./assets/sprite.svg#arrow"></use>
+							</svg>
+						</button>
+						<ul class="charts-months" id="charts-months" aria-label="List of months"></ul>
+						<button class="btn btn-dark btn-md next" aria-label="Next month">
+							<svg class="header-logo" width="20" height="20" viewBox="0 0 20 20" role="img" aria-labelledby="arrow-next-title">
+								<title id="arrow-next-title">Next month</title>
+								<use xlink:href="./assets/sprite.svg#arrow"></use>
+							</svg>
+						</button>
+					</div>
+					<div class="charts-canvas-wrapper" id="charts-canvas-wrapper">
+						<div class="charts-canvas-wrapper-responsive">
+							<canvas
+								class="charts-canvas"
+								id="charts-canvas"
+								width="1280"
+								height="400"
+								role="img"
+								aria-labelledby="charts-canvas-title">
+							</canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+		</main>
+		<script src="./js/helper.js"></script>
+		<script type="module">
+			// JSON data generation
+			const generateData = () => {
+				const data = [];
+				const dates = [];
+				const startDate = new Date(2024, 0, 1); // Start at 1 Jan 2024 (January)
+				const daysInYear = 365; // Adjust for a year
+				for (let i = 0; i < daysInYear; i++) {
+					const date = new Date(startDate);
+					date.setDate(date.getDate() + i); // Increment day by day
+					dates.push(date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }));
+					data.push({
+						date: dates[i],
+						red: Math.random() * 0.9 + 0.1, // Random TB values for red
+						blue: Math.random() * 0.9 + 0.1  // Random TB values for blue
+					});
+				}
+				return data;
+			};
+			const extractMonthStrings = (data) => {
+				const months = new Set(); // Use a Set to avoid duplicates
+
+				data.forEach(item => {
+					// Extract the month from the date string (e.g., "Jan", "Feb")
+					const month = item.date.split(" ")[0];
+					months.add(month); // Add the month to the Set
+				});
+
+				return Array.from(months); // Convert the Set to an array
+			};
+			const calculateTotals = (data) => {
+				let totalRed = 0;
+				let totalBlue = 0;
+
+				data.forEach(item => {
+					totalRed += item.red;
+					totalBlue += item.blue;
+				});
+
+				return [totalRed, totalBlue];
+			};
+
+			const chartData = generateData();
+			const chartMonths = extractMonthStrings(chartData);
+			const [totalRed, totalBlue] = calculateTotals(chartData);
+			const canvas = document.getElementById("charts-canvas");
+			const ctx = canvas.getContext("2d");
+
+			const totalRedEl = document.getElementById("total-red");
+
+			if (totalRedEl) {
+				totalRedEl.innerHTML = `${totalRed.toFixed()} GB`;
+			}
+
+			const totalBlueEl = document.getElementById("total-blue");
+
+			if (totalBlueEl) {
+				totalBlueEl.innerHTML = `${totalBlue.toFixed()} GB`;
+			}
+
+			const monthsNavigation = document.getElementById("charts-months-navigation");
+
+			if (monthsNavigation) {
+				monthsNavigation.addEventListener('click', (event) => {
+					if (event.target.tagName.toLowerCase() === 'button') {
+						if (event.target.id) {
+							setCurrentMonth(event.target.id);
+						} else {
+							const i = chartMonths.findIndex((m) => m === currentMonth);
+							const m = () => {
+								if (event.target.classList.value.endsWith('next')) {
+									return chartMonths[i + 1]
+								}
+
+								if (event.target.classList.value.endsWith('prev')) {
+									return chartMonths[i - 1]
+								}
+
+								return undefined;
+							}
+
+							if (m()) {
+								setCurrentMonth(m());
+							}
+						}
+					}
+				});
+
+				// Fill buttons
+
+				const monthsList = document.getElementById("charts-months");
+
+				if (monthsList) {
+					chartMonths.forEach((m) => {
+						const templateWrap = document.createElement("li");
+
+						templateWrap.setAttribute("role", "listitem");
+
+						const template = `
+							<button class="btn btn-gray btn-md" id="${m}" aria-label="View data for ${m}">${m}</button>
+						`;
+
+						templateWrap.innerHTML = template.trim();
+
+						monthsList.appendChild(templateWrap);
+					});
+				}
+			}
+
+			// Set the canvas size (adjust for retina display)
+			const devicePixelRatio = window.devicePixelRatio || 1;
+			const width = 1248;
+			const height = 400;
+			const padding = 50;
+
+			// Set the display size of the canvas (visual size in the layout)
+			canvas.style.width = width + 'px';
+			canvas.style.height = height + 'px';
+
+			// Set the actual canvas size (logical resolution) for the drawing context
+			canvas.width = width * devicePixelRatio;
+			canvas.height = height * devicePixelRatio;
+
+			// Scale the context to match the device pixel ratio
+			ctx.scale(devicePixelRatio, devicePixelRatio);
+
+			const blueColor = "#203D90";
+			const redColor = "#B02F28";
+
+			let dragStartX = null;
+			let currentMonth = "Jan";
+			let currentOffset = 0;
+
+			function setCurrentMonth(m, offset) {
+				currentMonth = m;
+				currentOffset = offset || getCurrentOffset(currentMonth);
+
+				const months = document.getElementById('charts-months');
+
+				if (months) {
+					months.querySelectorAll('button').forEach((b) => {
+						if (b.id === m) {
+							b.classList.add('active');
+
+							const parentLi = b.parentElement.getBoundingClientRect();
+							const parentUl = b.parentElement.parentElement.getBoundingClientRect();
+
+							const x1 = parentUl.width / 2;
+							const x2 = parentLi.width / 2;
+
+							b.parentElement.parentElement.scrollLeft = b.parentElement.offsetLeft - (x1 + x2);
+						} else {
+							b.classList.remove('active');
+						}
+					});
+				}
+
+				drawChart(chartData);
+			}
+
+			function getCurrentOffset(m) {
+				return chartData.findIndex((d) => d.date.startsWith(m))
+			}
+
+			// Global array for X points
+			let band = [];
+
+			const chartsWrapper = document.getElementById("charts-canvas-wrapper");
+
+			// Tooltip elements for red and blue
+			const tooltipRed = document.createElement('div');
+			const tooltipBlue = document.createElement('div');
+
+			if (chartsWrapper) {
+				tooltipRed.classList.add('charts-tooltip-red');
+				tooltipBlue.classList.add('charts-tooltip-blue');
+
+				chartsWrapper.appendChild(tooltipRed);
+				chartsWrapper.appendChild(tooltipBlue);
+			}
+
+			// Drawing the chart
+			const drawChart = (data, offset = currentOffset) => {
+				const width = canvas.style.width.replace('px', '');
+				const height = canvas.style.height.replace('px', '');
+
+				// Chart boundaries
+				const chartWidth = width - 2 * padding;
+				const chartHeight = height - 2 * padding;
+
+				// Max value
+				const maxValue = Math.max(...data.map(d => Math.max(d.red, d.blue)));
+
+				// Map data to canvas coordinates
+				const xScale = chartWidth / (30 - 2); // Show 30 days (one month)
+				const yScale = chartHeight / maxValue;
+
+				// Fill a band
+				band = data.slice(offset, offset + 30).map((d, i) => ({
+					x: padding + i * xScale,
+					date: d.date,
+					points: [
+						{
+							y: height - padding - d.red * yScale,
+							value: d.red,
+						},
+						{
+							y: height - padding - d.blue * yScale,
+							value: d.blue,
+						}
+					]
+				}));
+
+				// Clear canvas
+				ctx.clearRect(0, 0, width, height);
+
+				// Draw axes
+				ctx.beginPath();
+				ctx.moveTo(padding, padding);
+				ctx.lineTo(padding, height - padding);
+				ctx.lineTo(width, height - padding);
+				ctx.strokeStyle = "#191919";
+				ctx.lineWidth = 1;
+				ctx.stroke();
+
+				// Draw grid and labels
+				ctx.font = "14px Arial";
+				ctx.fillStyle = "#191919";
+				ctx.textAlign = "center";
+
+				// X-axis labels (for the current month)
+				data.slice(offset, offset + 30).forEach((d, i) => {
+					const x = padding + i * xScale;
+					const label = d.date.split(" ").reverse().join(" ");
+
+					// Save the current context state
+					ctx.save();
+
+					// Rotate the context by 45 degrees
+					ctx.translate(x - 10, height - padding + 30);
+					ctx.rotate(-Math.PI / 4); // Rotate by -45 degrees (clockwise)
+
+					// Draw the label
+					ctx.fillText(label, 0, 0);
+
+					// Restore the context state to avoid rotating other elements
+					ctx.restore();
+				});
+
+				// Y-axis labels
+				for (let i = 0; i <= 11; i++) {
+					const y = height - padding - (i / 1.035  * chartHeight / 10);
+					const label = (maxValue * i / 10).toFixed(1);
+
+					// Save the current context state
+					ctx.save();
+
+					// Apply text align
+					ctx.textAlign = "right";
+
+					if (i === 11) {
+						ctx.fillText("TB", padding - 10, y);
+					} else {
+						ctx.fillText(i === 0 ? "0" : label, padding - 10, y);
+					}
+
+					// Restore the context state to avoid rotating other elements
+					ctx.restore();
+				}
+
+				// Draw red line
+				ctx.beginPath();
+				band.forEach((b, i) => {
+					if (i === 0) ctx.moveTo(b.x, b.points[0].y);
+					else ctx.lineTo(b.x, b.points[0].y);
+				});
+				ctx.strokeStyle = redColor;
+				ctx.lineWidth = 3;
+				ctx.stroke();
+
+				// Draw blue line
+				ctx.beginPath();
+				band.forEach((b, i) => {
+					if (i === 0) ctx.moveTo(b.x, b.points[1].y);
+					else ctx.lineTo(b.x, b.points[1].y);
+				});
+				ctx.strokeStyle = blueColor;
+				ctx.lineWidth = 3;
+				ctx.stroke();
+			};
+
+			// Initial draw (start with June)
+			setCurrentMonth("Jun");
+
+			// Re-Drawing the chart
+			const redrawChart = () => {
+				tooltipRed.style.display = 'none';
+				tooltipBlue.style.display = 'none';
+
+				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before redrawing
+				drawChart(chartData); // Redraw the chart
+			}
+
+			// Handle mouse down event for dragging
+			canvas.addEventListener('mousedown', (e) => {
+				dragStartX = e.offsetX;
+			});
+
+			// Handle mouse move event for dragging and tooltips
+			canvas.addEventListener('mousemove', (e) => {
+				const mouseX = e.offsetX;  // Use offsetX to get mouse position on canvas
+
+				let hover = false;
+
+				const pointDiameter = 7;
+
+				if (dragStartX === null) {
+					band.forEach(b => {
+						const dist = Math.sqrt(Math.pow(mouseX - b.x, 2));
+						if (dist < pointDiameter * 2) { // If within radius of point
+							redrawChart();
+
+							hover = true;
+
+							const red = b.points[0];
+							const blue = b.points[1];
+
+							const height = 64;
+							const distance = red.y - blue.y;
+							const difference = height - Math.round(Math.abs(distance));
+
+							// Avoid Y collision
+							if (Math.round(Math.abs(distance)) < height) {
+								if (distance > 0) {
+									tooltipRed.style.top = `${red.y - pointDiameter}px`;
+									tooltipRed.classList.remove('stack');
+
+									tooltipBlue.style.top = `${blue.y - difference + 2}px`;
+									tooltipBlue.classList.add('stack');
+								} else {
+									tooltipBlue.style.top = `${blue.y - pointDiameter}px`;
+									tooltipBlue.classList.remove('stack');
+
+									tooltipRed.style.top = `${red.y - difference + 2}px`;
+									tooltipRed.classList.add('stack');
+								}
+							} else {
+								tooltipRed.classList.remove('stack');
+								tooltipBlue.classList.remove('stack');
+
+								tooltipRed.style.top = `${red.y - pointDiameter}px`;
+								tooltipBlue.style.top = `${blue.y - pointDiameter}px`;
+							}
+
+							// Show red tooltip
+							tooltipRed.style.display = 'block';
+							tooltipRed.style.left = `${b.x}px`;
+							tooltipRed.style.transform = `translate(-50%, calc(-100% - ${pointDiameter}px))`;
+							tooltipRed.innerHTML = `${b.date.split(" ").reverse().join(" ")}<br>${red.value.toFixed(2)} TB`;
+
+							// Show blue tooltip
+							tooltipBlue.style.display = 'block';
+							tooltipBlue.style.left = `${b.x}px`;
+							tooltipBlue.style.transform = `translate(-50%, calc(-100% - ${pointDiameter}px))`;
+							tooltipBlue.innerHTML = `${b.date.split(" ").reverse().join(" ")}<br>${b.points[1].value.toFixed(2)} TB`;
+
+							// Draw the highlighted vertical line
+							ctx.beginPath();
+							ctx.moveTo(b.x, padding);
+							ctx.lineTo(b.x, canvas.style.height.replace('px', '') - padding);
+							ctx.strokeStyle = "#A2A2A2";
+							ctx.lineWidth = 1;
+							ctx.stroke();
+
+							// Draw red point
+							ctx.beginPath();
+							ctx.arc(b.x, b.points[0].y, pointDiameter, 0, Math.PI * 2);
+							ctx.fillStyle = redColor;
+							ctx.fill();
+
+							// Draw blue point
+							ctx.beginPath();
+							ctx.arc(b.x, b.points[1].y, pointDiameter, 0, Math.PI * 2);
+							ctx.fillStyle = blueColor;
+							ctx.fill();
+						}
+					});
+				}
+
+				// Hide tooltips if no points are hovered
+				if (!hover) {
+					redrawChart();
+				}
+
+				// Dragging logic
+				if (dragStartX === null) return;
+
+				const deltaX = mouseX - dragStartX;
+
+				if (Math.abs(deltaX) > 30) {  // Move after a certain threshold
+					currentOffset += deltaX > 0 ? -1 : 1; // Move left or right
+					currentOffset = Math.max(0, Math.min(currentOffset, chartData.length - 30)); // Boundaries
+					setCurrentMonth(chartData[currentOffset + 30 / 2].date.split(" ")[0], currentOffset)
+					dragStartX = mouseX;
+				}
+			});
+
+			// Handle mouse up event to stop dragging
+			canvas.addEventListener('mouseup', () => {
+				dragStartX = null;
+			});
+
+			// Handle mouse leave event to redraw
+			canvas.addEventListener('mouseleave', () => {
+				tooltipRed.style.display = 'none';
+				tooltipBlue.style.display = 'none';
+
+				ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas before redrawing
+				drawChart(chartData); // Redraw the chart
+			});
+
+			// Handle touch start event for dragging
+			canvas.addEventListener('touchstart', (e) => {
+				dragStartX = e.touches[0].clientX; // Get the touch position
+			}, { passive: true });
+
+			// Handle touch move event for dragging and tooltips
+			canvas.addEventListener('touchmove', (e) => {
+				const touchX = e.touches[0].clientX; // Get the touch position
+
+				redrawChart();
+
+				// Dragging logic
+				if (dragStartX === null) return;
+
+				const deltaX = touchX - dragStartX;
+
+				if (Math.abs(deltaX) > 30) { // Move after a certain threshold
+					currentOffset += deltaX > 0 ? -1 : 1; // Move left or right
+					currentOffset = Math.max(0, Math.min(currentOffset, chartData.length - 30)); // Boundaries
+					setCurrentMonth(chartData[currentOffset + 30 / 2].date.split(" ")[0], currentOffset)
+					dragStartX = touchX;
+				}
+			}, { passive: true });
+
+			// Handle touch end event to stop dragging
+			canvas.addEventListener('touchend', () => {
+				dragStartX = null;
+			}, { passive: true });
+		</script>
+	</body>
+</html>

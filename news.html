@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Karma8</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="./styles/main.css">
+	</head>
+	<body>
+		<header class="header container">
+			<a href="./news.html" aria-label="Go to the news homepage">
+				<svg class="header-logo" width="137" height="32" viewBox="0 0 137 32" role="img" aria-labelledby="logo-title">
+					<title id="logo-title">Website Logo</title>
+					<use xlink:href="./assets/sprite.svg#logo"></use>
+				</svg>
+			</a>
+			<nav class="header-nav" aria-label="Main navigation">
+				<a class="btn btn-gray btn-md" href="./charts.html">Charts</a>
+				<a class="btn btn-gray btn-md" href="./news.html">News</a>
+			</nav>
+		</header>
+		<main class="main container">
+			<div class="slider" aria-label="Image Slider">
+				<a class="slider-main" id="slider-main" href="" aria-labelledby="slider-main-title">
+					<img
+						class="slider-main-image"
+						src=""
+						loading="eager"
+						alt="Primary slider image description"
+						aria-labelledby="slider-main-title"
+					>
+					<div class="slider-main-info">
+						<span class="slider-main-info-title" id="slider-main-title">Slider Title</span>
+						<div class="slider-main-info-buttons">
+							<button class="btn btn-light btn-md" aria-label="Explore more content">Explore</button>
+							<button class="btn btn-light btn-md" aria-label="Next slide">
+								<svg
+									class="header-logo"
+									width="20"
+									height="20"
+									viewBox="0 0 20 20"
+									role="img"
+									aria-labelledby="next-arrow-title">
+									<title id="next-arrow-title">Next slide</title>
+									<use xlink:href="./assets/sprite.svg#arrow"></use>
+								</svg>
+							</button>
+						</div>
+					</div>
+				</a>
+				<ul class="slider-nav" id="slider-nav" aria-label="Slider navigation"></ul>
+			</div>
+			<div class="latest-news" aria-label="Latest News Section">
+				<h2 class="latest-news-title">Latest News</h2>
+				<ul class="latest-news-list" id="latest-news" aria-label="List of latest news articles"></ul>
+				<button
+					class="latest-news-read-more btn btn-dark btn-sm"
+					id="latest-news-read-more"
+					aria-label="Load more news articles">
+					Read more
+				</button>
+			</div>
+		</main>
+		<script src="./js/helper.js"></script>
+		<script type="module">
+			const news = await fetch("./db/news.json").then((response) => response.json());
+
+			// Fill highlight
+
+			function fillHighlight(highlight) {
+				const newsHighlightElement = document.getElementById("slider-main");
+
+				if (newsHighlightElement) {
+					newsHighlightElement.href = `./news/${highlight.id}`
+
+					const image = newsHighlightElement.querySelector('img');
+
+					if (image) {
+						image.src = highlight.image;
+						image.alt = highlight.title;
+					}
+
+					const title = newsHighlightElement.querySelector('span');
+
+					if (title) {
+						title.innerHTML = highlight.title;
+					}
+				}
+			}
+
+			fillHighlight(news[0]);
+
+			// Fill slider nav
+
+			function fillMainNews(mainNews) {
+				const newsMainElement = document.getElementById("slider-nav");
+
+				if (newsMainElement) {
+					newsMainElement.addEventListener('click', (event) => {
+						const newsMainElementItem = window.x.findParentByTag(event.target, 'li');
+
+						if (newsMainElementItem) {
+							const id = newsMainElementItem.id.slice(-1);
+							const item = news.find((item) => item.id === Number(id))
+
+							if (item) {
+								fillHighlight(item);
+							}
+						}
+					});
+
+					mainNews.forEach((news) => {
+						const templateWrap = document.createElement("li");
+
+						templateWrap.setAttribute("role", "listitem");
+						templateWrap.setAttribute("aria-labelledby", `slider-nav-item-title-${news.id}`);
+
+						const template = `
+							<span class="slider-nav-item-title" id="slider-nav-item-title-${news.id}">${news.title}</span>
+							<p class="slider-nav-item-description">${news.description}</p>
+							<div class="slider-nav-item-meta">
+								<time datetime="${new Date(news.createdAt).toISOString()}">${window.x.timeAgo(news.createdAt)}</time> | <span>${news.category}</span>
+							</div>
+						`;
+
+						templateWrap.id = `slider-nav-item-${news.id}`;
+						templateWrap.classList.add("slider-nav-item");
+						templateWrap.innerHTML = template.trim();
+
+						newsMainElement.appendChild(templateWrap);
+					})
+				}
+			}
+
+			fillMainNews(news.slice(0, 4));
+
+			// Fill the latest news
+
+			let latestNewsPage = 1;
+			const latestNewsSize = 8;
+
+			function fillLatestNews(latestNews) {
+				const newsLatestElement = document.getElementById("latest-news");
+
+				if (newsLatestElement) {
+					latestNews.forEach((news) => {
+						const templateWrap = document.createElement("li");
+
+						templateWrap.setAttribute("role", "listitem");
+
+						const template = `
+							<a class="latest-news-item" href="./news/${news.id}" aria-labelledby="latest-news-item-title-${news.id}" aria-describedby="latest-news-item-description-${news.id}">
+								<img class="latest-news-item-image" src="${news.image}" loading="lazy" alt="${news.title}">
+								<span class="latest-news-item-title" id="latest-news-item-title-${news.id}">${news.title}</span>
+								<p class="latest-news-item-description" id="latest-news-item-description-${news.id}">${news.description}</p>
+								<div class="latest-news-item-meta">
+									<time datetime="${new Date(news.createdAt).toISOString()}">${window.x.timeAgo(news.createdAt)}</time> | <span>${news.category}</span>
+								</div>
+							</a>
+						`;
+
+						templateWrap.innerHTML = template.trim();
+
+						newsLatestElement.appendChild(templateWrap);
+					});
+				}
+			}
+
+			fillLatestNews(news.slice(0, latestNewsSize));
+
+			// Load more
+
+			const readMore = document.getElementById("latest-news-read-more");
+
+			if (readMore) {
+				readMore.addEventListener("click", () => {
+					const start = latestNewsPage * latestNewsSize;
+					const end = (latestNewsPage = latestNewsPage + 1) * latestNewsSize;
+
+					fillLatestNews(news.slice(start, end));
+
+					// Remove button
+
+					if (end >= news.length) {
+						readMore.remove();
+					}
+				})
+			}
+		</script>
+	</body>
+</html>

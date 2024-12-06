@@ -1,0 +1,161 @@
+.charts {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+
+	@media (max-width: 768px) {
+		gap: 1rem;
+	}
+
+	.charts-title {
+		margin-top: 2rem;
+		font-size: 2rem;
+		font-weight: 600;
+		color: var(--dark);
+
+		@media (max-width: 768px) {
+			margin-top: 1rem;
+		}
+	}
+
+	.charts-amount {
+		display: flex;
+		align-items: flex-start;
+		gap: 2rem;
+
+		.charts-amount-item {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+
+			.charts-amount-item-name {
+				font-size: 1rem;
+				color: var(--gray-2);
+			}
+
+			.charts-amount-item-red {
+				font-size: 1.5rem;
+				font-weight: 600;
+				color: var(--charts-red);
+			}
+
+			.charts-amount-item-blue {
+				font-size: 1.5rem;
+				font-weight: 600;
+				color: var(--charts-blue);
+			}
+		}
+	}
+
+	.charts-wrapper {
+		position: relative;
+
+		.charts-months-navigation {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+
+			button.btn.next:has(svg) {
+				padding: 0.625rem;
+
+				svg {
+					pointer-events: none;
+				}
+			}
+
+			.charts-months {
+				width: 100%;
+				display: flex;
+				flex-direction: row;
+				justify-content: stretch;
+				gap: 0.5rem;
+				overflow: auto;
+
+				li {
+					display: flex;
+					flex: 1;
+
+					button {
+						width: 100%;
+					}
+				}
+			}
+
+			button.btn.prev:has(svg) {
+				padding: 0.625rem;
+				transform: rotate(180deg);
+
+				svg {
+					pointer-events: none;
+				}
+			}
+		}
+
+		.charts-canvas-wrapper {
+			position: relative;
+
+			.charts-canvas-wrapper-responsive {
+				position: relative;
+				overflow: hidden;
+				display: grid;
+			}
+		}
+
+		.charts-tooltip-red {
+			pointer-events: none;
+			position: absolute;
+			background-color: white;
+			color: var(--dark);
+			padding: 0.5rem;
+			border: 1px solid var(--charts-red);
+			border-radius: 0.5rem;
+			display: none;
+			text-align: left;
+			font-size: 1rem;
+			font-family: "Arial", serif;
+			white-space: nowrap;
+
+			&:not(.stack)::before {
+				content: '';
+				position: absolute;
+				width: 10px;
+				height: 10px;
+				background: white;
+				top: calc(100% - 5px);
+				left: calc(50% - 5px);
+				transform: rotate(45deg);
+				border-bottom: 1px solid var(--charts-red);
+				border-right: 1px solid var(--charts-red);
+			}
+		}
+
+		.charts-tooltip-blue {
+			pointer-events: none;
+			position: absolute;
+			background-color: white;
+			color: var(--dark);
+			padding: 0.5rem;
+			border: 1px solid var(--charts-blue);
+			border-radius: 0.5rem;
+			display: none;
+			text-align: left;
+			font-size: 1rem;
+			font-family: "Arial", serif;
+			white-space: nowrap;
+
+			&:not(.stack)::before {
+				content: '';
+				position: absolute;
+				width: 10px;
+				height: 10px;
+				background: white;
+				top: calc(100% - 5px);
+				left: calc(50% - 5px);
+				transform: rotate(45deg);
+				border-bottom: 1px solid var(--charts-blue);
+				border-right: 1px solid var(--charts-blue);
+			}
+		}
+	}
+}
